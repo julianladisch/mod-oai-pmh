@@ -1,9 +1,9 @@
-name: mac
+name: arm
 on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
       with:
@@ -13,4 +13,7 @@ jobs:
         distribution: 'temurin'
         java-version: '11'
         cache: maven
-    - run: mvn clean install
+    - uses: pguyot/arm-runner-action@v2
+      with:
+        commands: |
+            mvn clean install
