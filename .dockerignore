@@ -1,1 +1,4 @@
+# Only two files are needed for the Docker container
+*
+!target/mod-oai-pmh-fat.jar
 !prometheus-jmx-config.yaml

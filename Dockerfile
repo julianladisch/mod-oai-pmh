@@ -1,22 +1,9 @@
-FROM folioci/alpine-jre-openjdk21:latest
-
-# Install latest patch versions of packages: https://pythonspeed.com/articles/security-updates-in-docker/
-USER root
-RUN apk upgrade --no-cache
-USER folio
-
-ENV VERTICLE_FILE mod-oai-pmh-fat.jar
-
-# Set the location of the verticles
-ENV VERTICLE_HOME /usr/verticles
-
-# Copy your fat jar to the container
-COPY target/${VERTICLE_FILE} ${VERTICLE_HOME}/${VERTICLE_FILE}
-
-# Add JMX exporter and config
-RUN mkdir -p jmx_exporter &&\
-    wget -P jmx_exporter https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar
+FROM docker.io/folioci/eclipse-temurin:25-alpine
+WORKDIR /app
+ADD --checksum=sha256:1279040261ee47b834bd21488f42e6dc765d4bd95442a66f586bec238a081293 \
+    https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar \
+    jmx_exporter/
 COPY ./prometheus-jmx-config.yaml jmx_exporter/
-
-# Expose this port locally in the container.
+COPY target/mod-oai-pmh-fat.jar app.jar
 EXPOSE 8081 9991
+CMD ["java", "-jar", "app.jar"]
