@@ -3,6 +3,8 @@ package org.folio.rest.impl;
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.folio.rest.impl.OkapiMockServer.OAI_TEST_TENANT;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
@@ -23,9 +25,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
-class ModTenantApiIt {
+// CHECKSTYLE SUPPRESS: AbbreviationAsWordInName because maven-failsafe-plugin requires **/*IT.java
+class ModTenantApiIT {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ModTenantApiIt.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ModTenantApiIT.class);
 
   private static final Network network = Network.newNetwork();
 
@@ -75,6 +78,7 @@ class ModTenantApiIt {
 
   @BeforeAll
   static void beforeAll() {
+    RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
     RestAssured.baseURI = "http://" + module.getHost() + ":" + module.getFirstMappedPort();
     RestAssured.requestSpecification = new RequestSpecBuilder()
         .addHeader("x-okapi-tenant", OAI_TEST_TENANT)
@@ -90,12 +94,23 @@ class ModTenantApiIt {
   }
 
   @Test
-  void tenantApiShouldReturn200AndDatabaseShouldBePopulated() {
-    given().body("{ \"module_to\": \"99.99.99\" }")
-        .when().post("/_/tenant")
-        .then().statusCode(200);
+  void postTenantShouldSucceedAndDatabaseShouldBePopulated() {
+    postTenant("{ \"module_to\": \"mod-oai-pmh-99.99.99\" }");
 
     when().post("/oai-pmh/clean-up-instances").then().statusCode(204);
+  }
+
+  void postTenant(String body) {
+    var location =
+        given().body(body)
+        .when().post("/_/tenant")
+        .then().statusCode(201)
+        .extract().header("Location");
+
+    given().when().get(location + "?wait=65000")
+        .then().statusCode(200)
+        .body("complete", is(true),       // job is complete
+              "error", is(nullValue()));  // job has succeeded without error
   }
 
 }

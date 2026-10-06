@@ -1,6 +1,6 @@
-CREATE ROLE oaitest_mod_oai_pmh PASSWORD 'oaiTest' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
+CREATE ROLE oaitest_mod_oai_pmh PASSWORD 'oaitest' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
 GRANT oaitest_mod_oai_pmh TO CURRENT_USER;
-CREATE SCHEMA oaiTest_mod_inventory_storage AUTHORIZATION oaitest_mod_oai_pmh;
+CREATE SCHEMA oaitest_mod_inventory_storage AUTHORIZATION oaitest_mod_oai_pmh;
 ALTER ROLE oaitest_mod_oai_pmh SET search_path = "$user";
 SET search_path TO oaitest_mod_oai_pmh;
 
@@ -23,6 +23,7 @@ CREATE ROLE oaitest_mod_source_record_storage WITH
 CREATE TABLE oaitest_mod_inventory_storage.instance (
     id uuid NOT NULL,
     jsonb jsonb NOT NULL,
+    complete_updated_date timestamptz,
     creation_date timestamp without time zone,
     created_by text,
     instancestatusid uuid,
@@ -30,25 +31,6 @@ CREATE TABLE oaitest_mod_inventory_storage.instance (
     instancetypeid uuid
 );
 CREATE SCHEMA oaitest_mod_source_record_storage;
-
-CREATE SCHEMA oaitest_mod_oai_pmh;
-
-CREATE TABLE IF NOT EXISTS oaitest_mod_oai_pmh.request_metadata_lb
-(
-    request_id uuid NOT NULL,
-    last_updated_date timestamp with time zone NOT NULL,
-    stream_ended boolean NOT NULL DEFAULT true,
-    returned_instances_counter integer DEFAULT 0,
-    skipped_instances_counter integer DEFAULT 0,
-    failed_instances_counter integer DEFAULT 0,
-    suppressed_instances_counter integer DEFAULT 0,
-    downloaded_and_saved_instances_counter integer DEFAULT 0,
-    failed_to_save_instances_counter integer DEFAULT 0,
-    link_to_error_file character varying(1024) COLLATE pg_catalog."default",
-    started_date timestamp with time zone NOT NULL,
-    path_to_error_file_in_s3 character varying(1000) COLLATE pg_catalog."default",
-    CONSTRAINT request_metadata_lb_pkey PRIMARY KEY (request_id)
-);
 
 CREATE TYPE oaitest_mod_source_record_storage.record_type AS ENUM
     ('MARC_BIB', 'MARC_AUTHORITY', 'MARC_HOLDING', 'EDIFACT');
@@ -134,7 +116,3 @@ AS $BODY$
 SELECT $1::timestamptz
 $BODY$;
 
-CREATE TABLE oaitest_mod_oai_pmh.rmb_internal (
-    id integer NOT NULL,
-    jsonb jsonb NOT NULL
-);
